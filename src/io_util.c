@@ -91,4 +91,8 @@ int LF_io_write_exact(int fd, const void *in, size_t in_len)
 		}
 		writen += (size_t)n;
 	}
+    return 0;
 }
+
+
+

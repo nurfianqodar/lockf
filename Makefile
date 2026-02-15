@@ -15,7 +15,7 @@ $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) $^ -o $@ $(INCLUDE) $(LDFLAGS)
 
 build/%.o: src/%.c
-	@mkdir build/
+	@mkdir -p build/
 	$(CC) -c $(CFLAGS) $< -o $@ $(INCLUDE)
 
 clean:
