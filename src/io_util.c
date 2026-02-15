@@ -1,15 +1,20 @@
 #include "io_util.h"
+#include <asm-generic/errno.h>
 #include <endian.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 
 int LF_io_open_read(int *fd, const char *path)
 {
 	*fd = open(path, O_RDONLY | O_CLOEXEC);
 	if (-1 == *fd) {
+		sprintf(stderr, "open read error: %s (errno=%d)\n",
+			strerror(errno), errno);
 		return -errno;
 	}
 	return 0;
@@ -25,6 +30,8 @@ int LF_io_open_wirte(int *fd, const char *path, bool trunc)
 	}
 	*fd = open(path, oflag, 0644);
 	if (-1 == *fd) {
+		sprintf(stderr, "open write error: %s (errno=%d)\n",
+			strerror(errno), errno);
 		return -errno;
 	}
 	return 0;
@@ -33,6 +40,8 @@ int LF_io_open_wirte(int *fd, const char *path, bool trunc)
 int LF_io_close(int *fd)
 {
 	if (-1 == close(*fd)) {
+		sprintf(stderr, "close error: %s (errno=%d)\n", strerror(errno),
+			errno);
 		return -errno;
 	}
 	return 0;
@@ -48,6 +57,9 @@ int LF_io_read_max_or_eof(int fd, void *out, size_t *out_len, size_t max)
 			if (EINTR == errno) {
 				continue;
 			}
+			sprintf(stderr,
+				"read max or eof error: %s (errno=%d)\n",
+				strerror(errno), errno);
 			return -errno;
 		}
 		if (0 == n) {
@@ -66,10 +78,9 @@ int LF_io_read_exact(int fd, void *out, size_t out_len)
 		return ret;
 	}
 	if (_out_len < out_len) {
+		sprintf(stderr, "read exact error: %s (errno=%d)\n",
+			strerror(ENODATA), ENODATA);
 		return -ENODATA;
-	}
-	if (_out_len > out_len) { // I think this is redundant
-		return -EOVERFLOW;
 	}
 	return 0;
 }
@@ -85,9 +96,13 @@ int LF_io_write_exact(int fd, const void *in, size_t in_len)
 			if (EINTR == errno) {
 				continue;
 			}
+			sprintf(stderr, "read exact error: %s (errno=%d)\n",
+				strerror(errno), errno);
 			return -errno;
 		}
 		if (0 == n) {
+			sprintf(stderr, "write exact error: %s (errno=%d)\n",
+				strerror(ENODATA), ENODATA);
 			return -ENODATA;
 		}
 		writen += (size_t)n;

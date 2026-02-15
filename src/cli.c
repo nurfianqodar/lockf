@@ -157,6 +157,7 @@ int LF_cli_run(const LF_cli_config *config)
 			printf("new header error\n");
 			LF_io_close(&fd_in);
 			LF_io_close(&fd_out);
+			remove(config->output_path);
 			return -1;
 		}
 		ret = LF_header_write(&header, fd_out);
@@ -164,6 +165,7 @@ int LF_cli_run(const LF_cli_config *config)
 			printf("write new header error %s\n", strerror(errno));
 			LF_io_close(&fd_in);
 			LF_io_close(&fd_out);
+			remove(config->output_path);
 			return -1;
 		}
 		break;
@@ -173,12 +175,14 @@ int LF_cli_run(const LF_cli_config *config)
 			printf("read header error: %s\n", strerror(errno));
 			LF_io_close(&fd_in);
 			LF_io_close(&fd_out);
+			remove(config->output_path);
 			return -1;
 		}
 		break;
 	default:
 		LF_io_close(&fd_in);
 		LF_io_close(&fd_out);
+		remove(config->output_path);
 		return -1;
 	}
 
@@ -187,6 +191,7 @@ int LF_cli_run(const LF_cli_config *config)
 	if (ret != 0) {
 		LF_io_close(&fd_in);
 		LF_io_close(&fd_out);
+		remove(config->output_path);
 		return -1;
 	}
 
@@ -202,6 +207,7 @@ int LF_cli_run(const LF_cli_config *config)
 	default:
 		LF_io_close(&fd_in);
 		LF_io_close(&fd_out);
+		remove(config->output_path);
 		return -1;
 	}
 
@@ -211,6 +217,7 @@ int LF_cli_run(const LF_cli_config *config)
 			printf("read chunk error\n");
 			LF_io_close(&fd_in);
 			LF_io_close(&fd_out);
+			remove(config->output_path);
 			return -1;
 		}
 		switch (config->mode) {
@@ -219,6 +226,7 @@ int LF_cli_run(const LF_cli_config *config)
 			if (0 != ret) {
 				LF_io_close(&fd_in);
 				LF_io_close(&fd_out);
+				remove(config->output_path);
 				return -1;
 			}
 			break;
@@ -227,18 +235,21 @@ int LF_cli_run(const LF_cli_config *config)
 			if (0 != ret) {
 				LF_io_close(&fd_in);
 				LF_io_close(&fd_out);
+				remove(config->output_path);
 				return -1;
 			}
 			break;
 		default:
 			LF_io_close(&fd_in);
 			LF_io_close(&fd_out);
+			remove(config->output_path);
 			return -1;
 		}
 		ret = LF_chunk_write(&chunk, fd_out);
 		if (0 != ret) {
 			LF_io_close(&fd_in);
 			LF_io_close(&fd_out);
+			remove(config->output_path);
 			return -1;
 		}
 	} while (chunk.buf_len == LF_CHK_BUF_LEN_MAX);

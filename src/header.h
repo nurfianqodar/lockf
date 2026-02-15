@@ -7,6 +7,8 @@
 #define LF_HDR_SALT_LEN 16
 #define LF_HDR_BNONCE_LEN 8
 
+extern const uint8_t MAGIC[LF_HDR_MAGIC_LEN];
+
 typedef struct {
 	uint8_t magic[4];
 	uint32_t time_cost;

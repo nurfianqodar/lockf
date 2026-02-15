@@ -1,5 +1,6 @@
 #include "header.h"
 #include "io_util.h"
+#include <asm-generic/errno-base.h>
 #include <endian.h>
 #include <openssl/crypto.h>
 #include <openssl/rand.h>
@@ -29,6 +30,9 @@ int LF_header_read(LF_header *header, int fd)
 	if (0 != ret) {
 		return ret;
 	}
+	if (0 != memcmp(header->magic, MAGIC, LF_HDR_MAGIC_LEN)) {
+		return -EINVAL;
+	}
 	ret = LF_io_read_u32(fd, &header->time_cost, LITTLE_ENDIAN);
 	if (0 != ret) {
 		return ret;
@@ -55,7 +59,7 @@ int LF_header_read(LF_header *header, int fd)
 int LF_header_write(const LF_header *header, int fd)
 {
 	int ret;
-	ret = LF_io_write_exact(fd, MAGIC, LF_HDR_MAGIC_LEN);
+	ret = LF_io_write_exact(fd, header->magic, LF_HDR_MAGIC_LEN);
 	if (0 != ret) {
 		return ret;
 	}
