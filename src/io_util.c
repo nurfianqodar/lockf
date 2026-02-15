@@ -1,4 +1,5 @@
 #include "io_util.h"
+#include <endian.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stddef.h>
@@ -91,8 +92,43 @@ int LF_io_write_exact(int fd, const void *in, size_t in_len)
 		}
 		writen += (size_t)n;
 	}
-    return 0;
+	return 0;
 }
 
+int LF_io_write_u32(int fd, const uint32_t *in, int ord)
+{
+	int ret;
+	uint32_t ord_in;
+	switch (ord) {
+	case LITTLE_ENDIAN:
+		ord_in = htole32(*in);
+		break;
+	case BIG_ENDIAN:
+		ord_in = htobe32(*in);
+	}
 
+	ret = LF_io_write_exact(fd, &ord_in, 4);
+	if (0 != ret) {
+		return ret;
+	}
+	return 0;
+}
 
+int LF_io_read_u32(int fd, uint32_t *out, int ord)
+{
+	int ret;
+	uint32_t ord_out;
+	ret = LF_io_read_exact(fd, &ord_out, 4);
+	if (0 != ret) {
+		return ret;
+	}
+	switch (ord) {
+	case LITTLE_ENDIAN:
+		*out = le32toh(ord_out);
+		break;
+	case BIG_ENDIAN:
+		*out = be32toh(ord_out);
+		break;
+	}
+	return 0;
+}
