@@ -1,0 +1,9 @@
+.cache/
+build/
+compile_commands.json
+
+.idea/
+.vs/
+.vscode/
+.zed/
+
