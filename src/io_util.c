@@ -1,4 +1,5 @@
 #include "io_util.h"
+#include "err.h"
 #include <asm-generic/errno.h>
 #include <endian.h>
 #include <errno.h>
@@ -13,11 +14,9 @@ int LF_io_open_read(int *fd, const char *path)
 {
 	*fd = open(path, O_RDONLY | O_CLOEXEC);
 	if (-1 == *fd) {
-		sprintf(stderr, "open read error: %s (errno=%d)\n",
-			strerror(errno), errno);
-		return -errno;
+		return LF_err_from_errno(errno);
 	}
-	return 0;
+	return LF_E_OK;
 }
 
 int LF_io_open_wirte(int *fd, const char *path, bool trunc)
@@ -30,21 +29,17 @@ int LF_io_open_wirte(int *fd, const char *path, bool trunc)
 	}
 	*fd = open(path, oflag, 0644);
 	if (-1 == *fd) {
-		sprintf(stderr, "open write error: %s (errno=%d)\n",
-			strerror(errno), errno);
-		return -errno;
+		return LF_err_from_errno(errno);
 	}
-	return 0;
+	return LF_E_OK;
 }
 
 int LF_io_close(int *fd)
 {
 	if (-1 == close(*fd)) {
-		sprintf(stderr, "close error: %s (errno=%d)\n", strerror(errno),
-			errno);
-		return -errno;
+		return LF_err_from_errno(errno);
 	}
-	return 0;
+	return LF_E_OK;
 }
 
 int LF_io_read_max_or_eof(int fd, void *out, size_t *out_len, size_t max)
@@ -57,17 +52,14 @@ int LF_io_read_max_or_eof(int fd, void *out, size_t *out_len, size_t max)
 			if (EINTR == errno) {
 				continue;
 			}
-			sprintf(stderr,
-				"read max or eof error: %s (errno=%d)\n",
-				strerror(errno), errno);
-			return -errno;
+			return LF_err_from_errno(errno);
 		}
 		if (0 == n) {
 			break;
 		}
 		*out_len += (size_t)n;
 	}
-	return 0;
+	return LF_E_OK;
 }
 
 int LF_io_read_exact(int fd, void *out, size_t out_len)
@@ -78,11 +70,9 @@ int LF_io_read_exact(int fd, void *out, size_t out_len)
 		return ret;
 	}
 	if (_out_len < out_len) {
-		sprintf(stderr, "read exact error: %s (errno=%d)\n",
-			strerror(ENODATA), ENODATA);
-		return -ENODATA;
+		return LF_E_CORRUPT;
 	}
-	return 0;
+	return LF_E_OK;
 }
 
 int LF_io_write_exact(int fd, const void *in, size_t in_len)
@@ -96,18 +86,14 @@ int LF_io_write_exact(int fd, const void *in, size_t in_len)
 			if (EINTR == errno) {
 				continue;
 			}
-			sprintf(stderr, "read exact error: %s (errno=%d)\n",
-				strerror(errno), errno);
-			return -errno;
+			return LF_err_from_errno(errno);
 		}
 		if (0 == n) {
-			sprintf(stderr, "write exact error: %s (errno=%d)\n",
-				strerror(ENODATA), ENODATA);
-			return -ENODATA;
+			return LF_E_OK;
 		}
 		writen += (size_t)n;
 	}
-	return 0;
+	return LF_E_OK;
 }
 
 int LF_io_write_u32(int fd, const uint32_t *in, int ord)
@@ -120,13 +106,16 @@ int LF_io_write_u32(int fd, const uint32_t *in, int ord)
 		break;
 	case BIG_ENDIAN:
 		ord_in = htobe32(*in);
+        break;
+	default:
+		return LF_E_UNKNOWN;
 	}
 
 	ret = LF_io_write_exact(fd, &ord_in, 4);
 	if (0 != ret) {
 		return ret;
 	}
-	return 0;
+	return LF_E_OK;
 }
 
 int LF_io_read_u32(int fd, uint32_t *out, int ord)
@@ -145,5 +134,5 @@ int LF_io_read_u32(int fd, uint32_t *out, int ord)
 		*out = be32toh(ord_out);
 		break;
 	}
-	return 0;
+	return LF_E_OK;
 }

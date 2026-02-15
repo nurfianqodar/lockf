@@ -1,4 +1,5 @@
 #include "header.h"
+#include "err.h"
 #include "io_util.h"
 #include <asm-generic/errno-base.h>
 #include <endian.h>
@@ -15,12 +16,12 @@ int LF_header_new(LF_header *header, uint32_t t, uint32_t m, uint32_t p)
 	header->memory_cost = m;
 	header->parallelism = p;
 	if (1 != RAND_bytes(header->bnonce, LF_HDR_BNONCE_LEN)) {
-		return -4094;
+		return LF_E_UNKNOWN;
 	}
 	if (1 != RAND_bytes(header->salt, LF_HDR_SALT_LEN)) {
-		return -4094;
+		return LF_E_UNKNOWN;
 	}
-	return 0;
+	return LF_E_OK;
 }
 
 int LF_header_read(LF_header *header, int fd)
@@ -31,7 +32,7 @@ int LF_header_read(LF_header *header, int fd)
 		return ret;
 	}
 	if (0 != memcmp(header->magic, MAGIC, LF_HDR_MAGIC_LEN)) {
-		return -EINVAL;
+		return LF_E_CORRUPT;
 	}
 	ret = LF_io_read_u32(fd, &header->time_cost, LITTLE_ENDIAN);
 	if (0 != ret) {
@@ -53,7 +54,7 @@ int LF_header_read(LF_header *header, int fd)
 	if (0 != ret) {
 		return ret;
 	}
-	return 0;
+	return LF_E_OK;
 }
 
 int LF_header_write(const LF_header *header, int fd)
@@ -83,7 +84,7 @@ int LF_header_write(const LF_header *header, int fd)
 	if (0 != ret) {
 		return ret;
 	}
-	return 0;
+	return LF_E_OK;
 }
 
 void LF_header_cleanse(LF_header *header)
