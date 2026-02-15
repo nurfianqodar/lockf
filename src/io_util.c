@@ -17,7 +17,7 @@ int LF_io_open_read(int *fd, const char *path)
 
 int LF_io_open_wirte(int *fd, const char *path, bool trunc)
 {
-	int oflag = O_RDONLY | O_CREAT | O_CLOEXEC;
+	int oflag = O_WRONLY | O_CREAT | O_CLOEXEC;
 	if (trunc) {
 		oflag |= O_TRUNC;
 	} else {
