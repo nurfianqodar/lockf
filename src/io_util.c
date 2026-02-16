@@ -106,7 +106,7 @@ int LF_io_write_u32(int fd, const uint32_t *in, int ord)
 		break;
 	case BIG_ENDIAN:
 		ord_in = htobe32(*in);
-        break;
+		break;
 	default:
 		return LF_E_UNKNOWN;
 	}

@@ -115,7 +115,7 @@ int LF_chunk_decrypt(LF_chunk *chunk, const LF_header *header,
 	int final_len;
 	if (1 != EVP_DecryptFinal_ex(ctx, NULL, &final_len)) {
 		EVP_CIPHER_CTX_free(ctx);
-		return LF_E_UNKNOWN;
+		return LF_E_CORRUPT;
 	}
 	plain_len += final_len;
 	chunk->mode = LF_CMODE_PLAIN;
