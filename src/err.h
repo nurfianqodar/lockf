@@ -8,6 +8,8 @@
 #define LF_E_NOTFOUND 3
 #define LF_E_INVALID 4
 #define LF_E_RANGE 5
+#define LF_E_NOOP 6
+#define LF_E_NOARGS 7
 
 #define LF_E_UNKNOWN 999
 

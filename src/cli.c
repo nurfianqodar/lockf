@@ -5,12 +5,13 @@
 #include "io_util.h"
 #include "key.h"
 #include <linux/limits.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <wchar.h>
+#include <getopt.h>
 
 static int strtou32(const char *s, uint32_t *out)
 {
@@ -110,82 +111,87 @@ static int cli_run(const LF_cli_config *config, int fd_in, int fd_out)
 	return LF_E_OK;
 }
 
+struct option OPTS[] = {
+	{ "help", no_argument, 0, 'h' },
+	{ "input", required_argument, 0, 'i' },
+	{ "output", required_argument, 0, 'o' },
+	{ "password", required_argument, 0, 'P' },
+	{ "time", required_argument, 0, 't' },
+	{ "memory", required_argument, 0, 'm' },
+	{ "parallelism", required_argument, 0, 'p' },
+	{ 0, 0, 0, 0 },
+};
+
 int LF_cli_config_parse(LF_cli_config *config, int argc, char **argv)
 {
-	bool has_opath, has_ipath, has_pwd, has_time, has_mem, has_para;
-	has_opath = has_ipath = has_pwd = has_time = has_mem = has_para = false;
-	if (argc < 8) {
-		return LF_E_INVALID;
+	if (argc < 2) {
+		return LF_E_NOOP;
 	}
-	int idx = 1;
-	switch (argv[idx][0]) {
-	case 'e':
+	const char *mode = argv[1];
+	if (0 == strcmp(mode, "h") || 0 == strcmp(mode, "help")) {
+		return LF_E_NOOP;
+	} else if (0 == strcmp(mode, "e") || 0 == strcmp(mode, "encrypt")) {
 		config->mode = LF_CLIMODE_ENCRYPT;
-		break;
-	case 'd':
+	} else if (0 == strcmp(mode, "d") || 0 == strcmp(mode, "decrypt")) {
 		config->mode = LF_CLIMODE_DECRYPT;
-		break;
-	default:
+	} else {
+		LF_cli_print_usage();
 		return LF_E_INVALID;
 	}
-	idx += 1;
 
-	int ret;
-	while (idx < argc) {
-		const char *flag = argv[idx];
-		idx += 1;
-		const char *value = argv[idx];
-		idx += 1;
-		size_t value_len = strlen(value);
-		if (0 == strcmp(flag, "-i")) { // In file
-			if (value_len > PATH_MAX) {
+	bool has_i, has_o, has_P, has_t, has_m, has_p;
+	has_i = has_o = has_P = has_t = has_m = has_p = false;
+	optind = 2;
+	int opt;
+	while (-1 !=
+	       (opt = getopt_long(argc, argv, "i:o:P:t:m:p:", OPTS, NULL))) {
+		switch (opt) {
+		case 'i':
+			snprintf(config->input_path, PATH_MAX, "%s", optarg);
+			has_i = true;
+			break;
+		case 'o':
+			snprintf(config->output_path, PATH_MAX, "%s", optarg);
+			has_o = true;
+			break;
+		case 'P':
+			config->pwd_len = strlen(optarg);
+			if (config->pwd_len >= LF_CLI_PWD_MAX) {
 				return LF_E_INVALID;
 			}
-			strcpy(config->input_path, value);
-			has_ipath = true;
-		} else if (0 == strcmp(flag, "-o")) { // Out File
-			if (value_len > PATH_MAX) {
+			memcpy(config->pwd, optarg, config->pwd_len);
+			has_P = true;
+			break;
+		case 't':
+			if (0 != strtou32(optarg, &config->time_cost)) {
 				return LF_E_INVALID;
 			}
-			strcpy(config->output_path, value);
-			has_opath = true;
-		} else if (0 == strcmp(flag, "-t")) { // Time cost
-			if (0 != (ret = strtou32(value, &config->time_cost))) {
-				return ret;
-			}
-			has_time = true;
-		} else if (0 == strcmp(flag, "-m")) { // Memory cost
-			if (0 !=
-			    (ret = strtou32(value, &config->memory_cost))) {
-				return ret;
-			}
-			has_mem = true;
-		} else if (0 == strcmp(flag, "-p")) { // Parallelism
-			if (0 !=
-			    (ret = strtou32(value, &config->parallelism))) {
-				return ret;
-			}
-			has_para = true;
-		} else if (0 == strcmp(flag, "-P")) { // Password
-			if (value_len > LF_CLI_PWD_MAX) {
+			has_t = true;
+			break;
+		case 'm':
+			if (0 != strtou32(optarg, &config->memory_cost)) {
 				return LF_E_INVALID;
 			}
-			strcpy((char *)config->pwd, value);
-			has_pwd = true;
-		} else { // invalid options
-			return LF_E_INVALID;
+			has_m = true;
+			break;
+		case 'p':
+			if (0 != strtou32(optarg, &config->parallelism)) {
+				return LF_E_INVALID;
+			}
+			has_p = true;
+			break;
 		}
 	}
-	if (!(has_ipath && has_opath && has_pwd)) {
-		return LF_E_INVALID;
+	if (!(has_i && has_o && has_P)) {
+		return LF_E_NOARGS;
 	}
-	if (!has_time) {
+	if (!has_t) {
 		config->time_cost = LF_CLI_TIME_COST_DEFAULT;
 	}
-	if (!has_mem) {
+	if (!has_m) {
 		config->memory_cost = LF_CLI_MEMORY_COST_DEFAULT;
 	}
-	if (!has_para) {
+	if (!has_p) {
 		config->parallelism = LF_CLI_PARALLELISM_DEFAULT;
 	}
 	return LF_E_OK;
@@ -226,6 +232,7 @@ static const char *USAGE = "Usage:\n"
 			   "MODE:\n"
 			   "\te: encrypt\n"
 			   "\td: decrypt\n"
+			   "\th: help\n"
 			   "\nOPTIONS:\n"
 			   "\t-i: input file,\t\tvalue: path,\trequired\n"
 			   "\t-o: output file,\tvalue: path,\trequired\n"
