@@ -46,7 +46,6 @@ static int cli_run(const LF_cli_config *config, int fd_in, int fd_out)
 		ret = LF_header_new(&header, config->time_cost,
 				    config->memory_cost, config->parallelism);
 		if (ret != 0) {
-			printf("unable to create header\n");
 			return ret;
 		}
 		ret = LF_header_write(&header, fd_out);

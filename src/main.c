@@ -32,6 +32,9 @@ int main(int argc, char **argv)
 			fprintf(stderr,
 				"unable to create file: alredy exists\n");
 			break;
+		case LF_E_NOTFILE:
+			fprintf(stderr, "not a file\n");
+			break;
 		default:
 			fprintf(stderr, "unknown error\n");
 		}
